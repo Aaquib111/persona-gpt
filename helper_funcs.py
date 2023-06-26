@@ -93,7 +93,7 @@ def compute_completion_sentiment(logits: Float[Tensor, 'batch seq vocab'],
                                  ) -> Float[Tensor, 'batch']:
     probs = t.softmax(logits[:, -1], dim=-1)
     probs[probs < prob_threshold] = 0
-    sentiment = (probs * vocab_sentiment).sum(dim=-1)
+    sentiment = (probs * vocab_sentiment).sum(dim=-1) / probs.sum(dim=-1)
     if sentiment.dim() == 1:
         return sentiment.item()
     else:
