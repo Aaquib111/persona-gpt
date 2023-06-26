@@ -22,6 +22,7 @@ from pathlib import Path
 from transformer_lens.hook_points import HookPoint
 from transformer_lens import utils, HookedTransformer, ActivationCache
 from transformer_lens.components import Embed, Unembed, LayerNorm, MLP
+import plotly.graph_objects as go
 
 from transformers import AutoModelForSequenceClassification
 from transformers import TFAutoModelForSequenceClassification
@@ -79,8 +80,13 @@ def get_completion_sentiment(model: HookedTransformer, prompt: str, batch_size: 
 
 
 def print_topk_predictions(model: HookedTransformer,
-                           logits: Float[Tensor, 'seq vocab'],
+                           prompt: Optional[str] = None,
+                           logits: Optional[Float[Tensor, 'seq vocab']] = None,
                            k=5) -> None:
+    if prompt is not None:
+        logits = model(prompt).squeeze(0)
+    if logits.dim() == 3:
+        logits = logits.squeeze(0) 
     top_probs, top_indices = t.topk(t.softmax(logits[-1], dim=-1), k=k)
     preds = "\t".join([f"{p.item():.3f}: '{model.to_string(idx)}'" 
                           for p, idx in zip(top_probs, top_indices)])
@@ -98,5 +104,34 @@ def compute_completion_sentiment(logits: Float[Tensor, 'batch seq vocab'],
         return sentiment.item()
     else:
         return sentiment.mean().item()
+
+
+def plot_logit_attr(cache: ActivationCache,
+                    pos_slice: int,
+                    top_k: int = 10,
+                    component_slice: slice = slice(None, None, 4),
+                    add_b_U: bool = False,
+                    show_plot: bool = True) -> None:
+    resid_components, resid_labels = cache.accumulated_resid(return_labels=True,
+                                                                    # incl_mid=True,
+                                                                    apply_ln=True,
+                                                                    pos_slice=pos_slice,)
+    
+    redux_resid_components, redux_resid_labels = resid_components[component_slice], resid_labels[component_slice]
+    resid_attrs = redux_resid_components @ cache.model.W_U 
+    if add_b_U:
+        resid_attrs = resid_attrs + cache.model.b_U
+    top_logits, top_tokens = resid_attrs.mean(1).topk(top_k, dim=-1) # mean gets rid of batch dim
+    top_tokens_list = [cache.model.to_str_tokens(t) for t in top_tokens]
+
+    fig = go.Figure(data=go.Heatmap(
+        z=top_logits.cpu().numpy(),
+        y=redux_resid_labels,
+        text=top_tokens_list,
+        texttemplate='%{text}',
+    ))
+    fig.show()
+
+    return top_logits, top_tokens
 
 # %%
