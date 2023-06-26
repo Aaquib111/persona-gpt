@@ -78,7 +78,9 @@ def get_completion_sentiment(model: HookedTransformer, prompt: str, batch_size: 
     return sentiment
 
 
-def print_topk_predictions(model, logits, k=5):
+def print_topk_predictions(model: HookedTransformer,
+                           logits: Float[Tensor, 'seq vocab'],
+                           k=5) -> None:
     top_probs, top_indices = t.topk(t.softmax(logits[-1], dim=-1), k=k)
     preds = "\t".join([f"{p.item():.3f}: '{model.to_string(idx)}'" 
                           for p, idx in zip(top_probs, top_indices)])
@@ -96,3 +98,5 @@ def compute_completion_sentiment(logits: Float[Tensor, 'batch seq vocab'],
         return sentiment.item()
     else:
         return sentiment.mean().item()
+
+# %%
