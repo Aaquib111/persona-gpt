@@ -31,7 +31,7 @@ if MAIN:
 
     #tokenizer = LlamaTokenizer.from_pretrained("7b")
     #hf_model = LlamaForCausalLM.from_pretrained("7b").to(device)
-    tokenizer = AutoTokenizer.from_pretrained("gpt2-xl")
+    tokenizer = AutoTokenizer.from_pretrained("gpt2-large")
     hf_model = AutoModelForCausalLM.from_pretrained("gpt2-xl").to(device)
     #tokenizer = AutoTokenizer.from_pretrained("TheBloke/vicuna-7B-1.1-HF")
     #hf_model = AutoModelForCausalLM.from_pretrained("TheBloke/vicuna-7B-1.1-HF").to(device)

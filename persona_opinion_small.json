@@ -1,0 +1,20 @@
+{
+  "positive":[
+    {"sentence":  "I am a scientist, and I think vaccines are"},
+    {"sentence": },
+    {"sentence": },
+    {"sentence": },
+    {"sentence": },
+    {"sentence": },
+    {"sentence": },
+    {"sentence": },
+    {"sentence": },
+    {"sentence": },
+  ],
+  "negative": [
+
+  ],
+  "unrelated": [
+
+  ]
+}

@@ -30,7 +30,7 @@ from transformers import AutoTokenizer, AutoConfig
 
 # !git clone https://github.com/callummcdougall/path_patching.git
 import sys
-sys.path.append('./path_patching/')  # replace <repo-name> with the name of the cloned repository
+sys.path.append('../path_patching/')  # replace <repo-name> with the name of the cloned repository
 from path_patching import Node, IterNode, path_patch, act_patch
 
 t.set_grad_enabled(False)
@@ -56,18 +56,18 @@ class PromptCompletionDataset(Dataset):
         return len(self.vocab_str)
 
 
-def get_completion_sentiment(model: HookedTransformer, prompt: str, batch_size: int = 64) -> Float[Tensor, 'vocab']:
+def get_completion_sentiment(model: HookedTransformer, prompt: str, batch_size: int = 256) -> Float[Tensor, 'vocab']:
     MODEL = f"cardiffnlp/twitter-roberta-base-sentiment-latest"
     tokenizer = AutoTokenizer.from_pretrained(MODEL)
     # config = AutoConfig.from_pretrained(MODEL)
-    classifier = AutoModelForSequenceClassification.from_pretrained(MODEL)
+    classifier = AutoModelForSequenceClassification.from_pretrained(MODEL).to(device)
 
     sentiment = t.zeros(model.cfg.d_vocab).to(device)
     dataset = PromptCompletionDataset(model, prompt)
     dataloader = DataLoader(dataset, batch_size=batch_size)
     
     for i, batch in tqdm(enumerate(dataloader)):
-        class_output = classifier(**tokenizer(batch, return_tensors='pt', padding=True))
+        class_output = classifier(**tokenizer(batch, return_tensors='pt', padding=True).to(device))
         class_scores = t.softmax(class_output.logits.squeeze(), dim=-1)
         
         if class_scores.dim() == 1:  # if only one item in the batch
@@ -94,7 +94,7 @@ def compute_completion_sentiment(logits: Float[Tensor, 'batch seq vocab'],
     probs = t.softmax(logits[:, -1], dim=-1)
     probs[probs < prob_threshold] = 0
     sentiment = (probs * vocab_sentiment).sum(dim=-1)
-    if sentiment.dim() == 1:
+    if sentiment.shape[0] == 1:
         return sentiment.item()
     else:
         return sentiment.mean().item()
