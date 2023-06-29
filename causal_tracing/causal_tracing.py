@@ -152,7 +152,7 @@ if MAIN:
 
 print(pos_sentiment, unrelated_sentiment)
 
-2# %% Sentiment Difference 
+# %% Sentiment Difference 
 def sentiment_noising_metric(logits: Float[Tensor, 'batch seq vocab'],
                              completion_sentiment: Float[Tensor, 'vocab'],
                              clean_sentiment: float,
